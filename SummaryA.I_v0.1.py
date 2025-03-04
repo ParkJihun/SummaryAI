@@ -2,20 +2,16 @@ import os
 import streamlit as st
 import azure.cognitiveservices.speech as speechsdk
 import openai
-import urllib.request
-import zipfile
+import ffmpeg
 from datetime import datetime
 from pydub import AudioSegment
 
-# Streamlit 기본 설정
+# Streamlit UI
 st.title("📢 음성 파일 텍스트 변환 및 요약기")
-st.write("M4A 또는 WAV 파일을 업로드하세요.")
 
-# 📌 FFmpeg 자동 설치 (클라우드 환경 지원)
+# 📌 FFmpeg 자동 설치 (Streamlit Cloud 환경)
 if not os.path.exists("ffmpeg"):
-    st.write("🔽 FFmpeg 설치 중...")
     os.system("apt-get install ffmpeg -y")
-    st.write("✅ FFmpeg 설치 완료!")
 
 # 📌 FFmpeg 실행 경로 설정
 AudioSegment.converter = "ffmpeg"
@@ -27,21 +23,32 @@ service_region = "koreacentral"
 # 📌 파일 업로드
 uploaded_file = st.file_uploader("🎵 음성 파일을 업로드하세요", type=["m4a", "wav"])
 if uploaded_file is not None:
-    # 저장 경로 설정
     input_audio_path = f"temp_{datetime.now().strftime('%Y%m%d_%H%M%S')}.wav"
-
-    # 📌 파일 저장
+    
+    # 📌 업로드한 파일을 FFmpeg로 변환 (16kHz PCM WAV)
+    converted_audio_path = "converted_audio.wav"
+    
     with open(input_audio_path, "wb") as f:
         f.write(uploaded_file.getbuffer())
-    st.success("✅ 파일 업로드 완료!")
+    
+    st.write("🎵 음성 파일을 16kHz WAV로 변환 중...")
+    
+    try:
+        audio = AudioSegment.from_file(input_audio_path)
+        audio = audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)  # 16kHz, 모노, 16bit PCM
+        audio.export(converted_audio_path, format="wav")
+        st.success("✅ 변환 완료!")
+    except Exception as e:
+        st.error(f"오디오 변환 실패: {e}")
+        st.stop()
 
-    # 📌 Speech to Text 변환
+    # 📌 Azure Speech-to-Text 처리
     st.write("🎙️ 음성 인식 중...")
     
     # Azure 설정
     speech_config = speechsdk.SpeechConfig(subscription=speech_key, region=service_region)
     speech_config.speech_recognition_language = "ko-KR"
-    audio_config = speechsdk.audio.AudioConfig(filename=input_audio_path)
+    audio_config = speechsdk.audio.AudioConfig(filename=converted_audio_path)
     speech_recognizer = speechsdk.SpeechRecognizer(speech_config, audio_config)
 
     results = []
@@ -52,10 +59,8 @@ if uploaded_file is not None:
     speech_recognizer.recognized.connect(handle_final_result)
     speech_recognizer.start_continuous_recognition()
 
-    # 음성 인식이 완료될 때까지 대기
     import time
-    time.sleep(10)  # 충분한 시간 대기
-
+    time.sleep(10)  # 인식이 끝날 때까지 대기
     speech_recognizer.stop_continuous_recognition()
 
     # 📌 인식된 텍스트 표시
@@ -63,9 +68,9 @@ if uploaded_file is not None:
     st.subheader("📝 변환된 텍스트")
     st.write(full_text)
 
-    # 📌 요약 (ChatGPT 사용)
-    openai.api_key = "YOUR_OPENAI_API_KEY"  # OpenAI API 키 설정
-
+    # 📌 ChatGPT 요약
+    openai.api_key = "YOUR_OPENAI_API_KEY"
+    
     def summarize_text(text):
         response = openai.ChatCompletion.create(
             model="gpt-4",
@@ -80,7 +85,7 @@ if uploaded_file is not None:
     st.subheader("📌 요약 결과")
     st.write(summarized_text)
 
-    # 📌 요약된 텍스트 파일 다운로드 링크 제공
+    # 📌 요약된 텍스트 다운로드
     summary_file_path = "summary.txt"
     with open(summary_file_path, "w", encoding="utf-8") as f:
         f.write(summarized_text)
