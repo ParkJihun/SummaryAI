@@ -1,3 +1,6 @@
 streamlit
 azure-cognitiveservices-speech
 openai
+pydub
+ffmpeg
+ffmpeg-python
