@@ -7,6 +7,10 @@ from datetime import datetime
 from pydub import AudioSegment
 from dotenv import load_dotenv
 
+# ffmpeg 경로 설정 (Streamlit Cloud에서 사용 가능하게)
+os.environ["FFMPEG_BINARY"] = "/usr/bin/ffmpeg"
+os.environ["FFPROBE_BINARY"] = "/usr/bin/ffprobe"
+
 # Streamlit UI
 st.title("📢 음성 파일 텍스트 변환 및 요약기")
 
