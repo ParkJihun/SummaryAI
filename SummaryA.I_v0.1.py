@@ -5,7 +5,16 @@ import openai
 import ffmpeg
 from datetime import datetime
 from pydub import AudioSegment
-from dotenv import load_dotenv
+
+import subprocess
+import sys
+
+try:
+    import dotenv
+except ModuleNotFoundError:
+    print("📌 `python-dotenv`가 설치되지 않았습니다. 설치를 진행합니다...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "python-dotenv"])
+    print("✅ 설치 완료! 프로그램을 다시 실행하세요.")
 
 # Streamlit UI
 st.title("📢 음성 파일 텍스트 변환 및 요약기")
