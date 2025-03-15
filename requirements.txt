@@ -4,3 +4,4 @@ openai
 pydub
 ffmpeg
 ffmpeg-python
+python-dotenv
