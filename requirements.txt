@@ -5,3 +5,4 @@ pydub
 ffmpeg
 ffmpeg-python
 python-dotenv
+subprocess
