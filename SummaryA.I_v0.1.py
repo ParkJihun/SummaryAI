@@ -5,6 +5,7 @@ import openai
 import ffmpeg
 from datetime import datetime
 from pydub import AudioSegment
+from dotenv import load_dotenv
 
 # Streamlit UI
 st.title("📢 음성 파일 텍스트 변환 및 요약기")
@@ -16,9 +17,13 @@ if not os.path.exists("ffmpeg"):
 # 📌 FFmpeg 실행 경로 설정
 AudioSegment.converter = "ffmpeg"
 
+# 환경 변수 로드
+load_dotenv()
+
 # 📌 Azure Speech to Text API 설정
-speech_key = "116aa0968d984023b92eaae4d952c0a6"
-service_region = "koreacentral"
+# API 키 가져오기
+openai_api_key = os.getenv("OPENAI_API_KEY")
+azure_speech_key = os.getenv("AZURE_SPEECH_KEY")
 
 # 📌 파일 업로드
 uploaded_file = st.file_uploader("🎵 음성 파일을 업로드하세요", type=["m4a", "wav"])
@@ -69,8 +74,6 @@ if uploaded_file is not None:
     st.write(full_text)
 
     # 📌 ChatGPT 요약
-    openai.api_key = "YOUR_OPENAI_API_KEY"
-    
     def summarize_text(text):
         response = openai.ChatCompletion.create(
             model="gpt-4",
